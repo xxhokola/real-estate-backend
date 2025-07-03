@@ -3,62 +3,62 @@ import { pool } from '../db';
 
 const router = express.Router();
 
-// POST /payments - log a rent payment
+// Create new rent payment
 router.post('/', async (req, res) => {
   const {
     lease_id,
-    payer_id,
+    tenant_id,
     recipient_id,
     amount,
     due_date,
     payment_method
   } = req.body;
 
-  if (!lease_id || !payer_id || !recipient_id || !amount || !due_date) {
-    return res.status(400).json({ error: 'Missing required payment fields' });
+  if (!lease_id || !tenant_id || !recipient_id || !amount || !due_date) {
+    return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
     const result = await pool.query(
       `INSERT INTO rent_payments
-        (lease_id, payer_id, recipient_id, amount, due_date, payment_method)
-       VALUES ($1, $2, $3, $4, $5, $6)
+        (lease_id, tenant_id, recipient_id, amount, due_date, status, payment_method, transaction_date)
+       VALUES ($1, $2, $3, $4, $5, 'pending', $6, CURRENT_TIMESTAMP)
        RETURNING *`,
-      [lease_id, payer_id, recipient_id, amount, due_date, payment_method]
+      [lease_id, tenant_id, recipient_id, amount, due_date, payment_method]
     );
 
     res.status(201).json(result.rows[0]);
   } catch (err: any) {
-    console.error('Error inserting payment:', err);
-    res.status(500).json({ error: 'Failed to log payment transaction' });
+    console.error('Payment insert error:', err);
+    res.status(500).json({ error: 'Failed to log rent payment' });
   }
 });
 
-// GET /payments/:userId - show payments made or received by a user
+// Get all payments for a user (as tenant or recipient)
 router.get('/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
     const result = await pool.query(
       `SELECT * FROM rent_payments
-       WHERE payer_id = $1 OR recipient_id = $1
+       WHERE tenant_id = $1 OR recipient_id = $1
        ORDER BY due_date DESC`,
       [userId]
     );
 
     res.status(200).json(result.rows);
   } catch (err: any) {
-    console.error('Error retrieving payments:', err);
-    res.status(500).json({ error: 'Failed to fetch payment history' });
+    console.error('Fetch payments error:', err);
+    res.status(500).json({ error: 'Failed to fetch payments' });
   }
 });
 
-// PATCH /payments/:paymentId - update status (paid, late, etc.)
+// Update payment status (e.g. mark as paid/late)
 router.patch('/:paymentId', async (req, res) => {
   const { paymentId } = req.params;
   const { status } = req.body;
 
-  if (!['paid', 'pending', 'late'].includes(status)) {
+  if (!['pending', 'paid', 'late'].includes(status)) {
     return res.status(400).json({ error: 'Invalid status value' });
   }
 
@@ -77,8 +77,8 @@ router.patch('/:paymentId', async (req, res) => {
 
     res.status(200).json(result.rows[0]);
   } catch (err: any) {
-    console.error('Error updating payment status:', err);
-    res.status(500).json({ error: 'Failed to update payment status' });
+    console.error('Update payment error:', err);
+    res.status(500).json({ error: 'Failed to update payment' });
   }
 });
 
