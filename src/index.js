@@ -1,4 +1,3 @@
-// src/index.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -20,7 +19,7 @@ import verifyEmailRouter from './routes/verifyEmail.js';
 import resendVerificationRouter from './routes/resendVerification.js';
 import adminAuditRouter from './routes/adminAudit.js';
 import leaseApprovalRouter from './routes/leaseApproval.js';
-import leaseInviteRouter from './routes/leaseInvites.js';
+import leaseTemplatesRouter from './routes/leaseTemplates.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -28,13 +27,14 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Public routes
+// 🌐 Public routes
 app.use('/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/verify-email', verifyEmailRouter);
 app.use('/resend-verification', resendVerificationRouter);
+app.use('/lease-approval', leaseApprovalRouter); // ✅ Must come before protected middleware
 
-// Protected routes
+// 🔐 Protected routes
 app.use(authenticateToken);
 app.use('/properties', propertiesRouter);
 app.use('/units', unitsRouter);
@@ -43,9 +43,10 @@ app.use('/payments', paymentsRouter);
 app.use('/my-properties', myPropertiesRouter);
 app.use('/lease-tenants', leaseTenantsRouter);
 app.use('/admin-audit', adminAuditRouter);
-app.use('/lease-invites', leaseInviteRouter);
+app.use('/lease-templates', leaseTemplatesRouter);
+
+// ✅ Health check
 app.get('/', (_req, res) => {
-app.use('/lease-approval', leaseApprovalRouter);
   res.send('🏠 Real Estate Backend API is running');
 });
 

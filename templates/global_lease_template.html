@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Residential Lease Agreement</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.5; margin: 2rem; }
+    h1, h2 { text-align: center; }
+    .section { margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Residential Lease Agreement</h1>
+
+  <div class="section">
+    This Residential Lease Agreement ("Agreement") is made between <strong>{{landlord_name}}</strong> ("Landlord") and <strong>{{tenant_name}}</strong> ("Tenant") concerning the premises located at <strong>{{property_address}}, Unit {{unit_number}}</strong>.
+  </div>
+
+  <div class="section">
+    <strong>Lease Term:</strong> {{lease_start}} to {{lease_end}}.
+  </div>
+
+  <div class="section">
+    <strong>Rent:</strong> Tenant agrees to pay <strong>${{rent_amount}}</strong> due on the {{due_day}} of each month.
+  </div>
+
+  <div class="section">
+    <strong>Security Deposit:</strong> ${{security_deposit}} is due before move-in and will be held per applicable laws.
+  </div>
+
+  <div class="section">
+    <strong>Utilities:</strong> Tenant shall be responsible for all utilities unless otherwise agreed in writing.
+  </div>
+
+  <div class="section">
+    <strong>Late Fees:</strong> A late fee of ${{late_fee}} or {{late_fee_percent}}% will apply after {{grace_period_days}} days.
+  </div>
+
+  <div class="section">
+    <strong>Additional Terms:</strong> Any alterations must be approved by Landlord in writing. No smoking or illegal activity permitted.
+  </div>
+
+  <div class="section">
+    <strong>Signatures:</strong><br /><br />
+    ____________________________<br />
+    Tenant Signature<br /><br />
+    ____________________________<br />
+    Landlord Signature
+  </div>
+</body>
+</html>

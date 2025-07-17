@@ -1,6 +1,7 @@
+// src/utils/tokenGenerator.js or approvalToken.js
 import jwt from 'jsonwebtoken';
 
-export const generateLeaseApprovalToken = (leaseId, tenantEmail) => {
+export const generateLeaseApprovalToken = ({ leaseId, tenantEmail }) => {
   return jwt.sign({ leaseId, tenantEmail }, process.env.JWT_SECRET, { expiresIn: '2d' });
 };
 

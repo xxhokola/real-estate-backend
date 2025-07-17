@@ -3,14 +3,16 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Simple in-memory login attempt tracker
+// 🧠 In-memory login throttling
 const loginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const BLOCK_TIME_MS = 10 * 60 * 1000; // 10 minutes
 
+// POST /auth/login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -38,8 +40,8 @@ router.post('/login', async (req, res) => {
     }
 
     const user = userRes.rows[0];
-
     const validPassword = await bcrypt.compare(password, user.password_hash);
+
     if (!validPassword) {
       loginAttempts.set(ip, { count: attempt.count + 1, lastTry: now });
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -49,19 +51,35 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ error: 'Email not verified. Please check your inbox.' });
     }
 
-    loginAttempts.delete(ip); // ✅ Reset on success
+    loginAttempts.delete(ip);
 
     const token = jwt.sign(
-      { user_id: user.user_id, email: user.email, role: user.role },
+      {
+        user_id: user.user_id,
+        email: user.email,
+        role: user.role
+      },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    res.json({ token });
+    console.log(`✅ Login success for ${email} (user_id ${user.user_id})`);
+
+    res.status(200).json({ token });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
   }
+});
+
+// ✅ GET /auth/me - Verify token and return user info
+router.get('/me', authenticateToken, (req, res) => {
+  const { user_id, email, role } = req.user;
+  if (!user_id || !email || !role) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  res.status(200).json({ user_id, email, role });
 });
 
 export default router;
