@@ -2,7 +2,7 @@
 import express from 'express';
 import { pool } from '../db.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { verifyLeaseApprovalToken } from '../utils/approvalToken.js';
+import { verifyLeaseApprovalToken } from '../utils/tokenGenerator.js'; // ✅ Updated import
 import { logAuditEvent } from '../services/auditLogger.js';
 import { generateSignedLeasePDF } from '../services/pdfGenerator.js';
 import { renderLeaseTemplate } from '../utils/renderLeaseTemplate.js';
@@ -68,6 +68,19 @@ router.post('/approve', authenticateToken, async (req, res) => {
 
     if (leaseCheck.rowCount === 0) {
       return res.status(404).json({ error: 'Invalid or expired lease token' });
+    }
+
+    // ✅ Check if required charges are paid
+    const unpaidCharges = await pool.query(
+      `SELECT * FROM lease_charges
+       WHERE lease_id = $1 AND paid = false AND description IN ('First Month Rent', 'Security Deposit')`,
+      [leaseId]
+    );
+
+    if (unpaidCharges.rowCount > 0) {
+      return res.status(403).json({
+        error: '❌ You must pay the Security Deposit and First Month\'s Rent before approving the lease.'
+      });
     }
 
     // ✅ Render lease template snapshot

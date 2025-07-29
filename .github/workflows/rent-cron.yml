@@ -2,8 +2,8 @@ name: Generate Rent Invoices
 
 on:
   schedule:
-    - cron: '0 8 * * *' # every day at 8 AM UTC
-  workflow_dispatch:
+    - cron: '0 8 * * *' # Every day at 8 AM UTC
+  workflow_dispatch: # Allow manual trigger
 
 jobs:
   generate:
@@ -19,9 +19,11 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Run rent generation
+      - name: Run rent generation script
         run: npm run generate:rent
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}

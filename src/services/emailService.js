@@ -1,7 +1,6 @@
 // src/services/emailService.js
 import nodemailer from 'nodemailer';
 
-// 🔐 Shared mail transport setup
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -10,7 +9,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// ✅ 1. Email Verification (used on registration)
+// ✅ 1. Email Verification
 export const sendVerificationEmail = async (email, token) => {
   const link = `http://localhost:5173/verify-email?token=${token}`;
 
@@ -28,14 +27,14 @@ export const sendVerificationEmail = async (email, token) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`📧 Email sent to ${email}: ${info.response}`);
+    console.log(`📧 Verification email sent to ${email}: ${info.response}`);
   } catch (err) {
     console.error('❌ Failed to send verification email:', err);
     throw new Error('Email send failed');
   }
 };
 
-// ✅ 2. Lease Approval (used after tenant assignment)
+// ✅ 2. Lease Approval (existing user)
 export const sendLeaseApprovalEmail = async (email, leaseId, token, propertyAddress, unitNumber) => {
   const link = `http://localhost:5173/approve-lease?token=${token}`;
 
@@ -56,14 +55,13 @@ export const sendLeaseApprovalEmail = async (email, leaseId, token, propertyAddr
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log(`📧 Lease invite sent to ${email}: ${info.response}`);
-    console.log(`🔗 Lease approval link: ${link}`);
   } catch (err) {
     console.error('❌ Failed to send lease approval email:', err);
     throw new Error('Lease email send failed');
   }
 };
 
-// ✅ 3. Generic Lease Invite (alternate simplified version)
+// ✅ 3. Generic Lease Invite (fallback)
 export const sendLeaseInviteEmail = async (to, token, approvalLink) => {
   const mailOptions = {
     from: `"Real Estate App" <${process.env.SMTP_USER}>`,
@@ -83,5 +81,55 @@ export const sendLeaseInviteEmail = async (to, token, approvalLink) => {
   } catch (err) {
     console.error('❌ Failed to send lease invite email:', err);
     throw new Error('Email send failed');
+  }
+};
+
+// ✅ 4. Send final signed PDF
+export const sendEmailWithAttachment = async ({ to, subject, text, attachment }) => {
+  const mailOptions = {
+    from: `"Real Estate App" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    text,
+    attachments: [
+      {
+        filename: attachment.filename,
+        content: attachment.content
+      }
+    ]
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`📎 Lease PDF sent to ${to}: ${info.response}`);
+  } catch (err) {
+    console.error('❌ Failed to send PDF email:', err);
+    throw new Error('Email send failed');
+  }
+};
+
+// ✅ 5. Invite new tenant to complete signup and approve lease
+export const sendTenantInviteEmail = async (email, token, leaseId) => {
+  const signupLink = `http://localhost:5173/signup?invite=${token}&lease=${leaseId}&email=${encodeURIComponent(email)}`;
+
+  const mailOptions = {
+    from: `"Real Estate App" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: 'You’ve been invited to sign a lease',
+    html: `
+      <h2>You're Invited to Join a Lease</h2>
+      <p>We've created an account for you. Click below to complete registration and approve your lease:</p>
+      <a href="${signupLink}" style="padding:10px 20px; background:#007bff; color:white; text-decoration:none; border-radius:5px;">Complete Registration</a>
+      <p>Or open this link: <a href="${signupLink}">${signupLink}</a></p>
+      <p>This link will expire in 7 days.</p>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`📧 Tenant signup invite sent to ${email}: ${info.response}`);
+  } catch (err) {
+    console.error('❌ Failed to send tenant invite email:', err);
+    throw new Error('Tenant invite email failed');
   }
 };

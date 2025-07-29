@@ -1,0 +1,51 @@
+.
+├── file_tree.txt
+├── package-lock.json
+├── package.json
+├── scripts
+│   ├── deleteUnverifiedUsers.js
+│   ├── generateRecurringCharges.js
+│   ├── generateRentInvoices.js
+│   └── seedGlobalLeaseTemplate.js
+├── src
+│   ├── db.js
+│   ├── index.js
+│   ├── middleware
+│   │   ├── authMiddleware.js
+│   │   └── roleMiddleware.js
+│   ├── routes
+│   │   ├── adminAudit.js
+│   │   ├── auth.js
+│   │   ├── charges.js
+│   │   ├── dashboard.js
+│   │   ├── leaseApproval.js
+│   │   ├── leases.js
+│   │   ├── leaseTemplates.js
+│   │   ├── leaseTenants.js
+│   │   ├── myProperties.js
+│   │   ├── payments.js
+│   │   ├── properties.js
+│   │   ├── resendVerification.js
+│   │   ├── units.js
+│   │   ├── users.js
+│   │   ├── verifyEmail.js
+│   │   └── webhooks.js
+│   ├── services
+│   │   ├── auditLogger.js
+│   │   ├── docxConverter.js
+│   │   ├── emailService.js
+│   │   └── pdfGenerator.js
+│   └── utils
+│       ├── convertDocxToPdf.js
+│       ├── fileHelpers.js
+│       ├── renderLeaseTemplate.js
+│       ├── s3Client.js
+│       ├── streamToBuffer.js
+│       └── tokenGenerator.js
+├── storage
+│   └── signed_leases
+├── templates
+│   └── global_lease_template.html
+└── tsconfig.json
+
+10 directories, 39 files

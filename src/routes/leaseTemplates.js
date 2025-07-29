@@ -1,12 +1,28 @@
-// src/routes/leaseTemplates.js
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs-extra';
 import { pool } from '../db.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { requireRole } from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 
-// POST /lease-templates - create new template
+// 🔧 Upload config
+const uploadDir = 'uploads/templates';
+fs.ensureDirSync(uploadDir);
+
+const storage = multer.diskStorage({
+  destination: uploadDir,
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({ storage });
+
+// ✅ POST /lease-templates - create template from HTML editor
 router.post('/', authenticateToken, requireRole(['landlord', 'manager']), async (req, res) => {
   const { property_id, name, type, content } = req.body;
 
@@ -29,7 +45,36 @@ router.post('/', authenticateToken, requireRole(['landlord', 'manager']), async 
   }
 });
 
-// PUT /lease-templates/:id - update existing template
+// ✅ POST /lease-templates/upload - upload .docx template
+router.post('/upload', authenticateToken, requireRole(['landlord', 'manager']), upload.single('file'), async (req, res) => {
+  const { property_id, name, type } = req.body;
+
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  if (!name) return res.status(400).json({ error: 'Missing name' });
+
+  try {
+    const filePath = req.file.path;
+    const fileExt = path.extname(filePath);
+
+    if (fileExt !== '.docx') {
+      return res.status(400).json({ error: 'Only .docx files are supported' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO lease_templates (property_id, name, type, file_path)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [property_id || null, name, type || 'residential', filePath]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Failed to upload lease template:', err);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+// ✅ PUT /lease-templates/:id - update HTML template
 router.put('/:id', authenticateToken, requireRole(['landlord', 'manager']), async (req, res) => {
   const { id } = req.params;
   const { name, type, content } = req.body;
@@ -58,7 +103,7 @@ router.put('/:id', authenticateToken, requireRole(['landlord', 'manager']), asyn
   }
 });
 
-// DELETE /lease-templates/:id - delete a template
+// ✅ DELETE /lease-templates/:id
 router.delete('/:id', authenticateToken, requireRole(['landlord', 'manager']), async (req, res) => {
   const { id } = req.params;
 
@@ -79,7 +124,7 @@ router.delete('/:id', authenticateToken, requireRole(['landlord', 'manager']), a
   }
 });
 
-// GET /lease-templates/:propertyId?include_base=true
+// ✅ GET /lease-templates/:propertyId?include_base=true
 router.get('/:propertyId', authenticateToken, requireRole(['landlord', 'manager']), async (req, res) => {
   const { propertyId } = req.params;
   const includeBase = req.query.include_base === 'true';
@@ -105,7 +150,7 @@ router.get('/:propertyId', authenticateToken, requireRole(['landlord', 'manager'
   }
 });
 
-// GET /lease-templates/edit/:id - fetch single template for editing
+// ✅ GET /lease-templates/edit/:id
 router.get('/edit/:id', authenticateToken, requireRole(['landlord', 'manager']), async (req, res) => {
   const { id } = req.params;
 
